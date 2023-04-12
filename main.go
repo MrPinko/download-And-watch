@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -91,7 +91,7 @@ func downloadPart(min int, max int, file *os.File) {
 	}
 	defer resp.Body.Close()
 
-	reader, err := ioutil.ReadAll(resp.Body)
+	reader, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
