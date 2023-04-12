@@ -16,7 +16,9 @@ var wg sync.WaitGroup
 var link = ""         //direct link to .mp4
 var maxGoRoutine = 10 //concurrent download
 
-//watch a mp4 file while downloading it
+var semaphore = make(chan struct{}, maxGoRoutine)
+
+// watch a mp4 file while downloading it
 func main() {
 
 	resp, err := http.Head(link)
@@ -62,6 +64,7 @@ func first_last_chunk(len_bytes int, file *os.File, length int) {
 
 func middleChunk(limit int, len_bytes int, file *os.File) {
 	for i := 1; i < limit-1; i++ {
+		semaphore <- struct{}{} // acquire
 		wg.Add(1)
 
 		min := len_bytes * i       // Min range
@@ -69,9 +72,6 @@ func middleChunk(limit int, len_bytes int, file *os.File) {
 
 		go downloadPart(min, max, file)
 
-		if i%maxGoRoutine == 0 {
-			wg.Wait()
-		}
 	}
 }
 
@@ -98,4 +98,6 @@ func downloadPart(min int, max int, file *os.File) {
 
 	file.WriteAt(reader, int64(min)) //replace empty bytes
 	wg.Done()
+
+	<-semaphore // release
 }
